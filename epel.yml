@@ -1,0 +1,7 @@
+--- # Fail2ban
+- hosts: EU
+  tasks:
+  - name: install epel-release
+    yum:
+      name: epel-release
+      state: latest

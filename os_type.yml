@@ -1,0 +1,5 @@
+---
+- hosts: httpd
+  tasks:
+  - shell: uptime
+    register: uptime

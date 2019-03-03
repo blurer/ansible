@@ -1,0 +1,17 @@
+--- # Fail2ban
+- hosts: aws
+  become: yes
+  tasks:
+  - name: Update Ubuntu cache
+    apt:
+      update_cache: yes
+      force_apt_get: True
+  - name: Update Ubuntu packages
+    apt:
+      name: "*"
+      state: latest
+      force_apt_get: True
+  - name: Apt autoremove
+    apt:
+      autoremove: yes
+      force_apt_get: True
