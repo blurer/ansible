@@ -1,0 +1,8 @@
+---
+- name: Storage
+  hosts: all
+  tasks:
+    - name: Storage df -ah
+      command: df -ah /
+      register: login
+    - debug: msg="{{ login.stdout }}"

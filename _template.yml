@@ -1,0 +1,8 @@
+---
+- name: Template name
+  hosts: all
+  tasks:
+    - name: description
+      command: [uptime]
+      register: login
+    - debug: msg="{{ login.stdout }}"

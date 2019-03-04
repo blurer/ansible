@@ -1,5 +1,5 @@
 --- # Fail2ban
-- hosts: EU
+- hosts: eu
   tasks:
   - name: Update CentOS
     yum:

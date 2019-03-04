@@ -1,0 +1,7 @@
+- name: Print uptime
+  hosts: all
+  tasks:
+    - name: shell uptime
+      command: uptime
+      register: login
+    - debug: msg="{{ login.stdout }}"

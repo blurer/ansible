@@ -1,5 +1,5 @@
---- # Fail2ban
-- hosts: EU
+--- # Install epel-release on all hosts
+- hosts: all
   tasks:
   - name: install epel-release
     yum:

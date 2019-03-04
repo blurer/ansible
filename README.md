@@ -6,7 +6,7 @@ A collection of dirty, but useful Ansible playbooks that I have scaped together.
 * updateUbuntu.yml - Updates apt cache, packages, and autoremove.
 * f2b.yml - Install fail2ban, starts the service, and enables at boot. [CentOS]
 * web.yml - Install apache, start the service, and enables at boot. [CentOS]
- 
+* template.yml - Template syntax that includes output of given command.
 
 ## Next Steps..
 * Make my Ansible inventory variable based to allow for playbook execution to not fail by region. 

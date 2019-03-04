@@ -1,0 +1,7 @@
+---
+- hosts: web
+  tasks:
+  - name: Install a yum package in Ansible example
+    yum:
+      name: ['git', 'httpd', 'fail2ban', 'vim']
+      state: present
