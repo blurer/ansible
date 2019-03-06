@@ -1,5 +1,0 @@
----
-- hosts: dns
-  tasks:
-  - name: uptime
-    command: uptime
