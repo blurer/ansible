@@ -1,0 +1,15 @@
+    vms:
+      - ct: 100
+        hostname: dns-1
+        memory: 1024
+        storage: 16
+        ip: 10.200.1.100/8
+        gateway: 10.0.0.1
+        dns: 8.8.8.8
+      - ct: 101
+        hostname: dns-2
+        memory: 1024
+        storage: 16
+        ip: 10.200.1.101/8
+        gateway: 10.0.0.1
+        dns: 8.8.8.8
