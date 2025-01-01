@@ -1,0 +1,16 @@
+---
+- name: Fetch authorized keys
+  hosts: all
+  tasks:
+    - name: Ensure .ssh directory exists
+      file:
+        path: ~/.ssh
+        state: directory
+        mode: '0700'
+
+    - name: Download authorized_keys
+      get_url:
+        url: https://raw.githubusercontent.com/blurer/myBS/refs/heads/main/authorized_keys
+        dest: ~/.ssh/authorized_keys
+        mode: '0600'
+        force: yes
