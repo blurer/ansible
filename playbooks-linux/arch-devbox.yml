@@ -12,6 +12,9 @@
       community.general.pacman:
         name:
           - ansible
+          - less
+          - vi
+          - nano
           - vim
           - git
           - curl

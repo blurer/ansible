@@ -1,4 +1,2 @@
 .vault_pass.txt
-vars/*
 .DS_Store
-vars/proxmox_credentials.yml
