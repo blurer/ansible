@@ -1,0 +1,108 @@
+---
+- name: Provision LXC container on Proxmox
+  hosts: proxmox_host
+  gather_facts: yes
+  vars:
+    proxmox_node: "vm-lurer" # Corrected: Added quotes
+    container_id: "100"
+    container_hostname: "ubuntu-lxc"
+    container_memory: 1024
+    container_swap: 512
+    container_cores: 1
+    container_storage: "sda1"
+    container_disk_size: "16"
+    container_template: "sda1:vztmpl/ubuntu-24.04-standard_24.04-2_amd64.tar.gz" # Corrected: Added quotes
+    ssh_public_key: "{{ lookup('file', '~/.ssh/id_rsa.pub') }}"
+    container_network:
+      net0: 'name=eth0,bridge=vmbr0,ip=dhcp'
+
+  tasks:
+    - name: Ensure proxmoxer is installed
+      pip:
+        name: proxmoxer
+        state: present
+      delegate_to: localhost
+
+    - name: Set up Proxmox API connection facts
+      set_fact:
+        proxmox_api_host: "{{ ansible_host }}"
+        proxmox_api_user: "{{ ansible_user }}"
+        proxmox_api_password: "{{ ansible_ssh_pass }}"
+
+    - name: Create LXC container
+      community.general.proxmox_vm:
+        api_host: "{{ proxmox_api_host }}"
+        api_user: "{{ proxmox_api_user }}"
+        api_password: "{{ proxmox_api_password }}"
+        node: "{{ proxmox_node }}"
+        vmid: "{{ container_id }}"
+        hostname: "{{ container_hostname }}"
+        ostemplate: "{{ container_template }}"
+        memory: "{{ container_memory }}"
+        swap: "{{ container_swap }}"
+        cores: "{{ container_cores }}"
+        storage: "{{ container_storage }}"
+        rootfs: "{{ container_disk_size }}"
+        netif: "{{ container_network }}"
+        state: present
+        onboot: yes
+        unprivileged: yes
+        ssh_public_keys: "{{ ssh_public_key }}"
+
+    - name: Start LXC container
+      community.general.proxmox:
+        api_host: "{{ proxmox_api_host }}"
+        api_user: "{{ proxmox_api_user }}"
+        api_password: "{{ proxmox_api_password }}"
+        node: "{{ proxmox_node }}"
+        vmid: "{{ container_id }}"
+        state: started
+
+    - name: Wait for LXC container to be running
+      community.general.proxmox:
+        api_host: "{{ proxmox_api_host }}"
+        api_user: "{{ proxmox_api_user }}"
+        api_password: "{{ proxmox_api_password }}"
+        node: "{{ proxmox_node }}"
+        vmid: "{{ container_id }}"
+        state: current
+      register: container_status
+      until: container_status.status == "running"
+      retries: 30
+      delay: 10
+
+    # Optional post-creation configuration tasks
+    - name: Wait for SSH to become available
+      wait_for:
+        host: "{{ container_hostname }}"
+        port: 22
+        delay: 10
+        timeout: 300
+      delegate_to: localhost
+
+    - name: Update container packages
+      become: true
+      become_method: sudo
+      become_user: root
+      ansible.builtin.apt:
+        update_cache: true
+        upgrade: "yes"
+      delegate_to: "{{ container_hostname }}"
+      remote_user: root
+      # when: container_status.status == "running"
+
+    - name: Install basic utilities
+      become: true
+      become_method: sudo
+      become_user: root
+      ansible.builtin.apt:
+        name:
+          - curl
+          - wget
+          - vim
+          - htop
+          - net-tools
+        state: present
+      delegate_to: "{{ container_hostname }}"
+      remote_user: root
+      # when: container_status.status == "running"

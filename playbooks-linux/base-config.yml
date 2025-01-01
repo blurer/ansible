@@ -1,0 +1,67 @@
+---
+- hosts: all
+  become: true
+  vars:
+    new_user: bl
+    github_repo: https://raw.githubusercontent.com/blurer/myBS/refs/heads/main
+    timezone: America/New_York
+
+  tasks:
+    - name: Ensure required packages are installed
+      apt:
+        name:
+          - htop
+          - vim
+          - git
+          - curl
+        state: present
+        update_cache: yes
+
+    - name: Create new user
+      user:
+        name: "{{ new_user }}"
+        shell: /bin/bash
+        create_home: yes
+        groups: sudo
+        state: present
+
+    - name: Add SSH key for new user
+      authorized_key:
+        user: "{{ new_user }}"
+        key: "{{ lookup('url', github_repo + '/authorized_keys') }}"
+        state: present
+
+    - name: Create .bashrc for new user
+      copy:
+        content: "{{ lookup('url', github_repo + '/.bashrc') }}"
+        dest: "/home/{{ new_user }}/.bashrc"
+        owner: "{{ new_user }}"
+        group: "{{ new_user }}"
+        mode: 0644
+
+    - name: Create .vimrc for new user
+      copy:
+        content: "{{ lookup('url', github_repo + '/.vimrc') }}"
+        dest: "/home/{{ new_user }}/.vimrc"
+        owner: "{{ new_user }}"
+        group: "{{ new_user }}"
+        mode: 0644
+
+    - name: Disable root login via password
+      lineinfile:
+        path: /etc/ssh/sshd_config
+        regexp: '^#?PermitRootLogin'
+        line: 'PermitRootLogin no'
+        state: present
+      notify:
+        - Restart SSH
+
+    - name: Set timezone
+      timezone:
+        name: "{{ timezone }}"
+
+  handlers:
+    - name: Restart SSH
+      service:
+        name: ssh
+        state: restarted

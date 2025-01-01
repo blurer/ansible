@@ -1,0 +1,40 @@
+---
+- hosts: all
+  become: true
+  vars:
+    new_user: bl
+    github_repo: https://raw.githubusercontent.com/blurer/myBS/refs/heads/main
+    timezone: America/New_York
+
+  tasks:
+    - name: Ensure .ssh directory exists for the new user
+      file:
+        path: "/home/{{ new_user }}/.ssh"
+        state: directory
+        owner: "{{ new_user }}"
+        group: "{{ new_user }}"
+        mode: 0700
+
+    - name: Add correct SSH key for new user
+      get_url:
+        url: "{{ github_repo }}/authorized_keys"
+        dest: "/home/{{ new_user }}/.ssh/authorized_keys"
+        owner: "{{ new_user }}"
+        group: "{{ new_user }}"
+        mode: 0600
+
+    - name: Fix .bashrc for new user
+      get_url:
+        url: "{{ github_repo }}/.bashrc"
+        dest: "/home/{{ new_user }}/.bashrc"
+        owner: "{{ new_user }}"
+        group: "{{ new_user }}"
+        mode: 0644
+
+    - name: Fix .vimrc for new user
+      get_url:
+        url: "{{ github_repo }}/.vimrc"
+        dest: "/home/{{ new_user }}/.vimrc"
+        owner: "{{ new_user }}"
+        group: "{{ new_user }}"
+        mode: 0644

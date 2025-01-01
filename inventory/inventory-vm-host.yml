@@ -1,0 +1,2 @@
+[host]
+vm-lurer     ansible_host=10.2.2.5 ansible_user=root

@@ -1,0 +1,55 @@
+---
+- name: Create DNS1+DNS2 VM
+  hosts: all
+  pre_tasks:
+    - name: Include vars
+      include_vars:
+        file: "../vars/proxmox_credentials.yml"
+  vars:
+    vms:
+      - ct: 100
+        hostname: dns-1
+        memory: 1024
+        storage: 16
+        ip: 10.2.2.10/8
+        gateway: 10.0.0.1
+        dns: 8.8.8.8
+      - ct: 101
+        hostname: dns-2
+        memory: 1024
+        storage: 16
+        ip: 10.2.2.11/8
+        gateway: 10.0.0.1
+        dns: 8.8.8.8
+  tasks:
+    - name: Create new container
+      community.general.proxmox:
+        vmid: "{{ item.ct }}"
+        api_host: "{{ api_host }}"
+        api_user: "{{ api_user }}"
+        api_token_id: "{{ api_token_id }}"
+        api_token_secret: "{{ api_token_secret }}"
+        node: "{{ node }}"
+        password: "{{ vm_root_password }}"
+        hostname: "{{ item.hostname }}"
+        ostemplate: 'sdb1:vztmpl/ubuntu-22.04-standard_22.04-1_amd64.tar.zst'
+        disk: "sda1:{{ item.storage }}"
+        netif:
+          net0: "name=eth0,gw={{ item.gateway }},ip={{ item.ip }},ip6=dhcp,bridge=vmbr0"
+        cores: 1
+        cpuunits: 50
+        memory: "{{ item.memory }}"
+        onboot: true
+        nameserver: "{{ item.dns }}"
+        pubkey: "{{ pubkey }}"
+      with_items: "{{ vms }}"
+    - name: Start containers
+      community.general.proxmox:
+        vmid: "{{ item.ct }}"
+        api_host: "{{ api_host }}"
+        api_user: "{{ api_user }}"
+        api_token_id: "{{ api_token_id }}"
+        api_token_secret: "{{ api_token_secret }}"
+        node: "{{ node }}"
+        state: started
+      with_items: "{{ vms }}"
