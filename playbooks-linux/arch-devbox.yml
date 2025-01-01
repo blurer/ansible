@@ -1,0 +1,109 @@
+---
+- hosts: arch
+  become: true
+  tasks:
+    - name: Set parallel downloads to 25
+      ansible.builtin.replace:
+        path: /etc/pacman.conf
+        regexp: '#ParallelDownloads = 5$'
+        replace: 'ParallelDownloads = 25'
+
+    - name: Install required packages
+      community.general.pacman:
+        name:
+          - ansible
+          - vim
+          - git
+          - curl
+          - unzip
+          - htop
+          - vnstat
+          - cronie
+          - bat
+          - tmux
+          - mtr
+          - nmap
+          - docker
+          - docker-compose
+          - ripgrep
+          - fd
+          - exa
+          - nfs-utils
+        state: present
+
+    - name: Enable and start NFS client service
+      ansible.builtin.systemd:
+        name: nfs-client.target
+        enabled: yes
+        state: started
+
+    - name: Create NAS mount point
+      ansible.builtin.file:
+        path: /mnt/nas
+        state: directory
+        mode: '0755'
+
+    - name: Enable and start Docker service
+      ansible.builtin.systemd:
+        name: docker
+        enabled: yes
+        state: started
+
+    - name: Add user to docker group
+      ansible.builtin.user:
+        name: "{{ ansible_user }}"
+        groups: docker
+        append: yes
+
+    - name: Enable and start cronie service
+      ansible.builtin.systemd:
+        name: cronie
+        enabled: yes
+        state: started
+
+    - name: Enable and start vnstat service
+      ansible.builtin.systemd:
+        name: vnstat
+        enabled: yes
+        state: started
+
+    - name: Set hostname
+      ansible.builtin.hostname:
+        name: bl-dev
+
+    - name: Generate SSH key
+      ansible.builtin.user:
+        name: "{{ ansible_user }}"
+        generate_ssh_key: yes
+        ssh_key_type: ed25519
+        ssh_key_comment: bl-dev
+        force: no
+      become: no
+
+    - name: Download .vimrc
+      ansible.builtin.get_url:
+        url: https://raw.githubusercontent.com/blurer/dotfiles/refs/heads/main/editors/.vimrc
+        dest: "/home/{{ ansible_user }}/.vimrc"
+        mode: '0644'
+      become: no
+
+    - name: Download .bashrc
+      ansible.builtin.get_url:
+        url: https://raw.githubusercontent.com/blurer/dotfiles/refs/heads/main/shell/.bashrc
+        dest: "/home/{{ ansible_user }}/.bashrc"
+        mode: '0644'
+      become: no
+
+    - name: Ensure .ssh directory exists
+      ansible.builtin.file:
+        path: "/home/{{ ansible_user }}/.ssh"
+        state: directory
+        mode: '0700'
+      become: no
+
+    - name: Download authorized_keys
+      ansible.builtin.get_url:
+        url: https://raw.githubusercontent.com/blurer/dotfiles/refs/heads/main/ssh/authorized_keys
+        dest: "/home/{{ ansible_user }}/.ssh/authorized_keys"
+        mode: '0600'
+      become: no
