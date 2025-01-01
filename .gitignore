@@ -1,2 +1,4 @@
 .vault_pass.txt
 .DS_Store
+vars/a300-creds.yml
+vars-ec200-creds.yml
