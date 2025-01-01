@@ -1,0 +1,25 @@
+---
+- name: Configure Pi-hole DNS entries
+  hosts: dns
+  become: true
+  vars:
+    dns_entries:
+      - { domain: "dns-1.lan", ip: "10.2.2.100" }
+      - { domain: "dns-2.lan", ip: "10.2.2.101" }
+      - { domain: "docker-1.lan", ip: "10.2.2.102" }
+      - { domain: "docker-2.lan", ip: "10.2.2.103" }
+      - { domain: "db.lan", ip: "10.2.2.104" }
+      - { domain: "git.lan", ip: "10.2.2.105" }
+
+  tasks:
+    - name: Add custom DNS entries
+      lineinfile:
+        path: /etc/pihole/custom.list
+        line: "{{ item.ip }} {{ item.domain }}"
+        create: yes
+      loop: "{{ dns_entries }}"
+      notify: Restart DNS service
+
+  handlers:
+    - name: Restart DNS service
+      command: pihole restartdns

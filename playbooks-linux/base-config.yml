@@ -1,5 +1,5 @@
 ---
-- hosts: all
+- hosts: dns
   become: true
   vars:
     new_user: bl
@@ -55,13 +55,13 @@
         - { url: 'https://raw.githubusercontent.com/blurer/dotfiles/refs/heads/main/shell/.bashrc', dest: '/home/{{ new_user }}/.bashrc' }
 
     - name: Allow passwordless sudo for bl user
-     lineinfile:
-       path: /etc/sudoers.d/bl
-       line: "bl ALL=(ALL) NOPASSWD:ALL"
-       state: present
-       mode: '0440'
-       create: yes
-       validate: 'visudo -cf %s'
+      lineinfile:
+        path: /etc/sudoers.d/bl
+        line: "bl ALL=(ALL) NOPASSWD:ALL"
+        state: present
+        mode: '0440'
+        create: yes
+        validate: 'visudo -cf %s'
 
     - name: Disable root login
       lineinfile:
