@@ -1,0 +1,16 @@
+services:
+  beszel:
+    image: henrygd/beszel:latest
+    container_name: beszel
+    restart: unless-stopped
+    extra_hosts:
+      - host.docker.internal:host-gateway
+    ports:
+      - 7007:8090
+    volumes:
+      - /home/bl/docker/beszel/:/beszel_data
+    networks:
+      - proxy_default
+networks:
+  proxy_default:
+    external: true

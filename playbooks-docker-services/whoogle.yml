@@ -1,0 +1,25 @@
+version: "2.4"
+
+services:
+  whoogle-search:
+    image: ${WHOOGLE_IMAGE:-benbusby/whoogle-search}
+    container_name: whoogle-search
+    restart: unless-stopped
+    pids_limit: 50
+    mem_limit: 256mb
+    memswap_limit: 256mb
+    # user debian-tor from tor package
+    user: whoogle
+    security_opt:
+      - no-new-privileges
+    cap_drop:
+      - ALL
+    tmpfs:
+      - /config/:size=10M,uid=927,gid=927,mode=1700
+    ports:
+      - 7010:5000
+    networks:
+      - proxy_default
+networks:
+  proxy_default:
+    external: true

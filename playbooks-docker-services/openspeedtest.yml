@@ -1,0 +1,14 @@
+version: "3"
+services:
+  openspeedtest:
+    image: openspeedtest/latest:latest
+    container_name: openspeedtest
+    ports:
+      - 7003:3000
+      - 7004:3001
+    restart: always
+    networks:
+      - proxy_default
+networks:
+  proxy_default:
+    external: true

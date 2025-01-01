@@ -1,5 +1,5 @@
 ---
-- hosts: dns
+- hosts: deployment
   become: true
   vars:
     new_user: bl

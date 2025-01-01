@@ -1,0 +1,15 @@
+services:
+  glance:
+    image: glanceapp/glance
+    volumes:
+      - /home/bl/docker/glance/glance.yml:/app/glance.yml
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+    ports:
+      - 7008:8080
+    restart: unless-stopped
+    networks:
+      - proxy_default
+networks:
+  proxy_default:
+    external: true
