@@ -110,3 +110,11 @@
         dest: "/home/{{ ansible_user }}/.ssh/authorized_keys"
         mode: '0600'
       become: no
+    - name: Allow passwordless sudo for bl user
+      lineinfile:
+        path: /etc/sudoers.d/bl
+        line: "bl ALL=(ALL) NOPASSWD:ALL"
+        state: present
+        mode: '0440'
+        create: yes
+        validate: 'visudo -cf %s'
