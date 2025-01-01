@@ -1,8 +1,18 @@
 ---
-- name: Storage
+- name: Check mounted storage
   hosts: all
   tasks:
-    - name: Storage df -ah
-      command: df -ah /
-      register: login
-    - debug: msg="{{ login.stdout }}"
+    - name: Get mount points
+      shell: "mount | grep -v ' / ' | grep '^/' | awk '{print $3}'"
+      register: mount_points
+
+    - name: Storage df for each mount
+      command: "df -h {{ item }}"
+      register: df_output
+      loop: "{{ mount_points.stdout_lines }}"
+      when: mount_points.stdout_lines | length > 0
+
+    - name: Display storage info
+      debug:
+        msg: "{{ df_output.results | map(attribute='stdout') | list }}"
+      when: df_output is defined
