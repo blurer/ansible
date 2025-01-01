@@ -1,5 +1,5 @@
 --- # Fail2ban
-- hosts: aws
+- hosts: all
   become: yes
   tasks:
   - name: Update Ubuntu cache
