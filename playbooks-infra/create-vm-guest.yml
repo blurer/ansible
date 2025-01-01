@@ -37,11 +37,18 @@
         dns: 8.8.8.8
       - ct: 104
         hostname: postgres
-        memory: 204
+        memory: 2048
         storage: 64
         ip: 10.2.2.104/8
         gateway: 10.0.0.1
-        dns: 8.8.8.8        
+        dns: 8.8.8.8    
+      - ct: 105
+        hostname: gittea
+        memory: 4096
+        storage: 32
+        ip: 10.2.2.105/8
+        gateway: 10.0.0.1
+        dns: 8.8.8.8    
   tasks:
     - name: Create new container
       community.general.proxmox:
