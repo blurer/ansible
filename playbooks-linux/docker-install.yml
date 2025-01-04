@@ -1,6 +1,6 @@
 ---
 - name: Install Docker and Docker Compose
-  hosts: docker
+  hosts: deployment
   become: true
   tasks:
     - name: Update apt cache

@@ -5,7 +5,7 @@ services:
     image: hkotel/mealie:latest
     restart: always
     ports:
-      - 7002:80
+      - 7002:9000
     environment:
       PUID: 1000
       PGID: 1000
@@ -16,7 +16,7 @@ services:
       RECIPE_SHOW_NUTRITION: 'true'
       RECIPE_SHOW_ASSETS: 'true'
       RECIPE_LANDSCAPE_VIEW: 'true'
-      RECIPE_DISABLE_COMMENTS: 'false'
+      RECIPE_DISABLE_COMMENTS: 'true'
       RECIPE_DISABLE_AMOUNT: 'false'
 
       # Gunicorn
@@ -24,7 +24,7 @@ services:
       # WORKERS_PER_CORE: 0.5
       # MAX_WORKERS: 8
     volumes:
-      - /home/bl/docker/mealie/data/:/app/data
+      - /mnt/docker/mealie:/app/data
     networks:
       - proxy_default
 networks:

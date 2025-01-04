@@ -1,0 +1,67 @@
+---
+- name: Deploy Core Docker Services
+  hosts: docker-svcs
+  become: true
+  vars:
+    docker_compose_dir: /opt/docker-core
+
+  tasks:
+    - name: Create core docker networks
+      community.docker.docker_network:
+        name: proxy_default
+        state: present
+
+    - name: Create compose directory
+      file:
+        path: "{{ docker_compose_dir }}"
+        state: directory
+
+    - name: Deploy core services compose
+      copy:
+        dest: "{{ docker_compose_dir }}/docker-compose.yml"
+        content: |
+          version: '3'
+          
+          services:
+            portainer:
+              image: portainer/portainer-ce:latest
+              container_name: portainer
+              restart: unless-stopped
+              security_opt:
+                - no-new-privileges:true
+              volumes:
+                - /etc/localtime:/etc/localtime:ro
+                - /var/run/docker.sock:/var/run/docker.sock:ro
+                - portainer_data:/data
+              ports:
+                - 9443:9443
+              networks:
+                - proxy_default
+
+            nginx-proxy-manager:
+              image: jc21/nginx-proxy-manager:latest
+              container_name: nginx-proxy-manager
+              restart: unless-stopped
+              ports:
+                - 80:80
+                - 443:443
+                - 81:81
+              volumes:
+                - npm_data:/data
+                - npm_ssl:/etc/letsencrypt
+              networks:
+                - proxy_default
+
+          networks:
+            proxy_default:
+              external: true
+
+          volumes:
+            portainer_data:
+            npm_data:
+            npm_ssl:
+
+    - name: Start core services
+      community.docker.docker_compose:
+        project_src: "{{ docker_compose_dir }}"
+        state: present

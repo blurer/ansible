@@ -1,0 +1,77 @@
+---
+- name: Install PostgreSQL on Ubuntu 22.04
+  hosts: postgres
+  become: true
+  vars_files:
+    - "{{ playbook_dir }}/../vars/dbsec.yml"
+  vars:
+    postgresql_version: 14
+    postgresql_user: postgres
+    postgresql_db: mydb
+    postgresql_listen_addresses: '*'
+    postgresql_port: 5432
+
+  tasks:
+    - name: Update apt cache
+      apt:
+        update_cache: yes
+        cache_valid_time: 3600
+
+    - name: Add bl user to postgres group
+      user:
+        name: bl
+        groups: postgres
+        append: yes
+
+    - name: Install PostgreSQL and dependencies
+      apt:
+        name: 
+          - postgresql-{{ postgresql_version }}
+          - postgresql-contrib
+          - python3-psycopg2
+        state: present
+
+    - name: Ensure PostgreSQL is started and enabled
+      service:
+        name: postgresql
+        state: started
+        enabled: yes
+
+    - name: Create PostgreSQL user
+      postgresql_user:
+        name: "{{ postgresql_user }}"
+        password: "{{ vault_postgresql_password }}"
+        role_attr_flags: CREATEDB,SUPERUSER
+      become: true
+      become_user: postgres
+
+    - name: Create PostgreSQL database
+      postgresql_db:
+        name: "{{ postgresql_db }}"
+        owner: "{{ postgresql_user }}"
+        encoding: UTF-8
+        lc_collate: C.UTF-8
+        lc_ctype: C.UTF-8
+        template: template0
+      become: true
+      become_user: postgres
+    - name: Configure postgresql.conf
+      lineinfile:
+        path: /etc/postgresql/{{ postgresql_version }}/main/postgresql.conf
+        regexp: "^#?listen_addresses "
+        line: "listen_addresses = '{{ postgresql_listen_addresses }}'"
+      notify: restart postgresql
+
+    - name: Configure pg_hba.conf
+      blockinfile:
+        path: /etc/postgresql/{{ postgresql_version }}/main/pg_hba.conf
+        block: |
+          host    all             all             0.0.0.0/0               md5
+          host    all             all             ::/0                    md5
+      notify: restart postgresql
+
+  handlers:
+    - name: restart postgresql
+      service:
+        name: postgresql
+        state: restarted

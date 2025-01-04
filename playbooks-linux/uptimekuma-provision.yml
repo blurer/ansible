@@ -1,0 +1,78 @@
+---
+- name: Install Uptime Kuma
+  hosts: uptimekuma
+  become: true
+  tasks:
+    - name: Install dependencies
+      apt:
+        name: 
+          - curl
+          - sudo
+          - mc
+          - git
+          - ca-certificates
+          - gnupg
+        state: present
+        update_cache: yes
+
+    - name: Create keyrings directory
+      file:
+        path: /etc/apt/keyrings
+        state: directory
+        mode: '0755'
+
+    - name: Download Node.js GPG key
+      get_url:
+        url: https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key
+        dest: /tmp/nodesource.gpg.key
+        mode: '0644'
+
+    - name: Import Node.js GPG key
+      shell: gpg --dearmor -o /etc/apt/keyrings/nodesource.gpg < /tmp/nodesource.gpg.key
+
+    - name: Add Node.js repository
+      copy:
+        content: "deb [signed-by=/etc/apt/keyrings/nodesource.gpg] https://deb.nodesource.com/node_20.x nodistro main"
+        dest: /etc/apt/sources.list.d/nodesource.list
+        mode: '0644'
+
+    - name: Install Node.js
+      apt:
+        name: nodejs
+        state: present
+        update_cache: yes
+
+    - name: Clone Uptime Kuma repository
+      git:
+        repo: https://github.com/louislam/uptime-kuma.git
+        dest: /opt/uptime-kuma
+
+    - name: Run npm setup
+      command: npm run setup
+      args:
+        chdir: /opt/uptime-kuma
+
+    - name: Create systemd service file
+      copy:
+        content: |
+          [Unit]
+          Description=uptime-kuma
+
+          [Service]
+          Type=simple
+          Restart=always
+          User=root
+          WorkingDirectory=/opt/uptime-kuma
+          ExecStart=/usr/bin/npm start
+
+          [Install]
+          WantedBy=multi-user.target
+        dest: /etc/systemd/system/uptime-kuma.service
+        mode: '0644'
+
+    - name: Enable and start Uptime Kuma service
+      systemd:
+        name: uptime-kuma
+        enabled: yes
+        state: started
+        daemon_reload: yes

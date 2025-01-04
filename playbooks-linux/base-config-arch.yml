@@ -9,7 +9,7 @@
       user:
         name: "{{ new_user }}"
         shell: /bin/bash
-        groups: sudo
+        groups: wheel
         append: yes
         
     - name: Ensure .ssh directory exists
@@ -29,7 +29,7 @@
         mode: '0600'
 
     - name: Install packages
-      apt:
+      pacman:
         name: [htop, vim, git, curl]
         state: present
         update_cache: yes
@@ -78,5 +78,5 @@
   handlers:
     - name: Restart SSH
       service:
-        name: ssh
+        name: sshd
         state: restarted

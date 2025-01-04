@@ -1,5 +1,5 @@
 ---
-- hosts: deployment
+- hosts: all
   become: true
   tasks:
     - name: set dns servers in resolv.conf

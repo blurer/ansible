@@ -1,0 +1,45 @@
+---
+- name: Install PostgreSQL on Ubuntu 22.04
+  hosts: prod
+  become: true
+  vars_files:
+    - "{{ playbook_dir }}/../vars/dbsec.yml"
+  vars:
+    postgresql_version: 14
+    postgresql_user: postgres
+    postgresql_db: mydb
+    postgresql_data_dir: /mnt/data/postgresql
+    postgresql_listen_addresses: '*'
+    postgresql_port: 5432
+
+  tasks:
+    - name: Stop PostgreSQL service
+      service:
+        name: postgresql
+        state: stopped
+
+    - name: Remove existing PostgreSQL cluster
+      command: pg_dropcluster {{ postgresql_version }} main --stop
+      ignore_errors: yes
+
+    - name: Install PostgreSQL and dependencies
+      apt:
+        name: 
+          - postgresql-{{ postgresql_version }}
+          - postgresql-contrib
+          - python3-psycopg2
+        state: present
+
+    - name: Create PostgreSQL data directory
+      file:
+        path: "{{ postgresql_data_dir }}"
+        state: directory
+        owner: postgres
+        group: postgres
+        mode: '0700'
+
+    - name: Initialize PostgreSQL database in new location
+      command: 
+        cmd: "pg_createcluster {{ postgresql_version }} main --datadir {{ postgresql_data_dir }}"
+      become: true
+      become_user: postgres

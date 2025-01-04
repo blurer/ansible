@@ -55,7 +55,7 @@
         storage: 16
         ip: 10.2.2.106/8
         gateway: 10.0.0.1
-        dns: 8.8.8.8        
+        dns: 8.8.8.8
   tasks:
     - name: Create new container
       community.general.proxmox:

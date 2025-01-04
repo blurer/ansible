@@ -8,7 +8,7 @@ services:
     ports:
       - 7007:8090
     volumes:
-      - /home/bl/docker/beszel/:/beszel_data
+      - /mnt/docker/beszel/:/beszel_data
     networks:
       - proxy_default
 networks:
