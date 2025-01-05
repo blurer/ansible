@@ -1,0 +1,52 @@
+---
+- name: Create VMs
+  hosts: a300
+  pre_tasks:
+    - name: Include vars
+      include_vars:
+        file: "~/dev/ansible/vars/a300-creds.yml"
+  vars:
+    vms:
+      - ct: 110
+        hostname: ollama
+        memory: 8192
+        storage: 80
+        ip: 10.2.2.110/24
+        gateway: 10.2.2.1
+        dns: 10.2.2.100
+        lxc: 
+          mount:
+            device: "/dev/dri/renderD128:/dev/dri/renderD128 /dev/dri/card0:/dev/dri/card0"
+  tasks:
+    - name: Create new container
+      community.general.proxmox:
+        vmid: "{{ item.ct }}"
+        api_host: "{{ api_host }}"
+        api_user: "root@pam"
+        api_token_id: "{{ api_token_id }}"
+        api_token_secret: "{{ api_token_secret }}"
+        node: "{{ node }}"
+        password: "{{ vm_root_password }}"
+        hostname: "{{ item.hostname }}"
+        ostemplate: 'sdb1:vztmpl/ubuntu-22.04-standard_22.04-1_amd64.tar.zst'
+        disk: "sda1:{{ item.storage }}"
+        netif:
+          net0: "name=eth0,gw={{ item.gateway }},ip={{ item.ip }},ip6=dhcp,bridge=vmbr0"
+        cores: 2
+        cpuunits: 50
+        memory: "{{ item.memory }}"
+        onboot: true
+        nameserver: "{{ item.dns }}"
+        pubkey: "{{ pubkey }}"
+        mounts: "{{ item.mounts }}"
+      with_items: "{{ vms }}"
+    - name: Start containers
+      community.general.proxmox:
+        vmid: "{{ item.ct }}"
+        api_host: "{{ api_host }}"
+        api_user: "{{ api_user }}"
+        api_token_id: "{{ api_token_id }}"
+        api_token_secret: "{{ api_token_secret }}"
+        node: "{{ node }}"
+        state: started
+      with_items: "{{ vms }}"
