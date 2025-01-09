@@ -1,0 +1,131 @@
+---
+- name: Deploy k3s on Arch Linux
+  hosts: k3s
+  become: true
+  vars:
+    k3s_version: "v1.28.6+k3s2"
+    k3s_server_args: ""
+    k3s_agent_args: ""
+    k3s_token: "your-secure-token"
+
+  tasks:
+    - name: Set role
+      set_fact:
+        is_master: "{{ inventory_hostname in groups['k3s_master'] }}"
+
+    - name: Install required packages
+      pacman:
+        name: 
+          - curl
+          - iptables
+          - nftables
+          - iproute2
+          - iputils
+        state: present
+
+    - name: Configure nftables for k3s
+      copy:
+        dest: /etc/nftables.conf
+        content: |
+          #!/usr/bin/nft -f
+          flush ruleset
+          
+          table inet filter {
+            chain input {
+              type filter hook input priority 0;
+              policy drop;
+              
+              ct state established,related accept
+              iifname lo accept
+              
+              # SSH
+              tcp dport 22 accept
+              
+              # K3s ports
+              tcp dport 6443 accept  # Kubernetes API
+              udp dport 8472 accept  # VXLAN
+              tcp dport 10250 accept # Kubelet
+              udp dport 51820 accept # WireGuard
+              udp dport 51821 accept # WireGuard
+            }
+            
+            chain forward {
+              type filter hook forward priority 0;
+              policy accept;
+            }
+            
+            chain output {
+              type filter hook output priority 0;
+              policy accept;
+            }
+          }
+      notify: Restart nftables
+
+    - name: Enable and start required services
+      systemd:
+        name: nftables
+        enabled: yes
+        state: started
+
+    - name: Test connectivity to master (from workers)
+      wait_for:
+        host: "{{ hostvars[groups['k3s_master'][0]]['ansible_default_ipv4']['address'] }}"
+        port: 6443
+        timeout: 5
+      when: not is_master
+      register: port_check
+      ignore_errors: yes
+
+    - name: Debug connectivity
+      debug:
+        msg: "Connection to master: {{ port_check }}"
+      when: not is_master
+
+    - name: Download k3s install script
+      get_url:
+        url: https://get.k3s.io
+        dest: /tmp/k3s-install.sh
+        mode: '0755'
+
+    - name: Install k3s server
+      shell: |
+        export INSTALL_K3S_VERSION={{ k3s_version }}
+        export K3S_TOKEN={{ k3s_token }}
+        /tmp/k3s-install.sh server {{ k3s_server_args }}
+      when: is_master
+      args:
+        creates: /usr/local/bin/k3s
+
+    - name: Wait for master API to be available
+      wait_for:
+        host: "{{ hostvars[groups['k3s_master'][0]]['ansible_default_ipv4']['address'] }}"
+        port: 6443
+        timeout: 300
+      when: not is_master
+
+    - name: Get master node IP
+      set_fact:
+        master_ip: "{{ hostvars[groups['k3s_master'][0]]['ansible_default_ipv4']['address'] }}"
+      when: not is_master
+
+    - name: Install k3s agent
+      shell: |
+        export INSTALL_K3S_VERSION={{ k3s_version }}
+        export K3S_URL=https://{{ master_ip }}:6443
+        export K3S_TOKEN={{ k3s_token }}
+        /tmp/k3s-install.sh agent {{ k3s_agent_args }}
+      when: not is_master
+      args:
+        creates: /usr/local/bin/k3s
+
+    - name: Ensure k3s service is running
+      systemd:
+        name: "{{ 'k3s' if is_master else 'k3s-agent' }}"
+        state: started
+        enabled: yes
+
+  handlers:
+    - name: Restart nftables
+      systemd:
+        name: nftables
+        state: restarted

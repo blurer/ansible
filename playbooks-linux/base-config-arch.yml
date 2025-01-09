@@ -1,5 +1,5 @@
 ---
-- hosts: prod
+- hosts: k3s
   become: true
   vars:
     new_user: bl
@@ -52,24 +52,6 @@
         mode: '0644'
       loop:
         - { url: 'https://raw.githubusercontent.com/blurer/dotfiles/refs/heads/main/editors/.vimrc', dest: '/home/{{ new_user }}/.vimrc' }
-        - { url: 'https://raw.githubusercontent.com/blurer/dotfiles/refs/heads/main/shell/.bashrc', dest: '/home/{{ new_user }}/.bashrc' }
-
-    - name: Allow passwordless sudo for bl user
-      lineinfile:
-        path: /etc/sudoers.d/bl
-        line: "bl ALL=(ALL) NOPASSWD:ALL"
-        state: present
-        mode: '0440'
-        create: yes
-        validate: 'visudo -cf %s'
-
-    - name: Disable root login
-      lineinfile:
-        path: /etc/ssh/sshd_config
-        regexp: '^#?PermitRootLogin'
-        line: 'PermitRootLogin no'
-        state: present
-      notify: Restart SSH
 
     - name: Set timezone
       timezone:
